@@ -5,6 +5,11 @@ import android.content.Context
 import com.google.gson.Gson
 import com.tasty.recipesapp.dto.RecipeDTO
 import com.tasty.recipesapp.dto.RecipeResultDTO
+import com.tasty.recipesapp.entity.RecipeEntity
+import com.tasty.recipesapp.model.RecipeModel
+import com.tasty.recipesapp.repo.dao.RecipeDao
+import com.tasty.recipesapp.repo.database.RecipeDatabase
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.Reader
@@ -14,9 +19,13 @@ import kotlin.coroutines.CoroutineContext
 
 class RecipeRepository(val context: Context) {
 
-    suspend fun readRecipes(): Array<RecipeDTO> {
+    val gson = Gson()
 
-        val gson = Gson()
+    suspend fun insertRecipe(recipe: RecipeEntity) {
+        RecipeDatabase.getDatabase(context).recipeDao().insertRecipe(recipe)
+    }
+
+    suspend fun readRecipes(): Array<RecipeDTO> {
         val file = context.resources.openRawResource(com.tasty.recipesapp.R.raw.all_recipes)
 
         try {
@@ -27,5 +36,12 @@ class RecipeRepository(val context: Context) {
             file.close()
         }
 
+    }
+      fun getAllRecipes(): List<RecipeDTO> {
+        return RecipeDatabase.getDatabase(context).recipeDao().getAllRecipes().map {
+            val jsonObject = JSONObject(it.json)
+            jsonObject.apply { put("id", it.internalId) }
+            gson.fromJson(jsonObject.toString(), RecipeDTO::class.java)
+        }
     }
 }
